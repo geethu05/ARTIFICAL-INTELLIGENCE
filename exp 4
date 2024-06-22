@@ -1,0 +1,42 @@
+from itertools import permutations
+
+def is_solution(assignment, words, result):
+    def word_value(word):
+        return sum(assignment[char] * (10 ** i) for i, char in enumerate(word[::-1]))
+    
+    words_value = sum(word_value(word) for word in words)
+    result_value = word_value(result)
+    
+    return words_value == result_value
+
+def solve_cryptarithm(words, result):
+    unique_chars = set(''.join(words) + result)
+    if len(unique_chars) > 10:
+        return None
+
+    chars = list(unique_chars)
+    for perm in permutations(range(10), len(chars)):
+        assignment = dict(zip(chars, perm))
+        
+        # Check if leading characters are assigned to 0
+        if any(assignment[word[0]] == 0 for word in words + [result]):
+            continue
+        
+        if is_solution(assignment, words, result):
+            return assignment
+    
+    return None
+
+def print_solution(assignment):
+    if not assignment:
+        print("No solution found.")
+    else:
+        for char, digit in assignment.items():
+            print(f"{char} = {digit}")
+        
+# Example usage:
+words = ["SEND", "MORE"]
+result = "MONEY"
+
+solution = solve_cryptarithm(words, result)
+print_solution(solution)
