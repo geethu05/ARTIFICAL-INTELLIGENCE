@@ -1,0 +1,65 @@
+from collections import deque
+
+def is_valid_state(state, capacities):
+    return 0 <= state[0] <= capacities[0] and 0 <= state[1] <= capacities[1]
+
+def get_neighbors(state, capacities):
+    jug1, jug2 = state
+    cap1, cap2 = capacities
+    neighbors = []
+
+    # Fill Jug1
+    neighbors.append((cap1, jug2))
+    
+    # Fill Jug2
+    neighbors.append((jug1, cap2))
+    
+    # Empty Jug1
+    neighbors.append((0, jug2))
+    
+    # Empty Jug2
+    neighbors.append((jug1, 0))
+    
+    # Pour Jug1 -> Jug2
+    pour_to_jug2 = min(jug1, cap2 - jug2)
+    neighbors.append((jug1 - pour_to_jug2, jug2 + pour_to_jug2))
+    
+    # Pour Jug2 -> Jug1
+    pour_to_jug1 = min(jug2, cap1 - jug1)
+    neighbors.append((jug1 + pour_to_jug1, jug2 - pour_to_jug1))
+    
+    return neighbors
+
+def bfs(capacities, target):
+    start = (0, 0)
+    queue = deque([(start, [])])
+    visited = set()
+    visited.add(start)
+    
+    while queue:
+        (current_state, path) = queue.popleft()
+        
+        if current_state[0] == target or current_state[1] == target:
+            return path + [current_state]
+        
+        for neighbor in get_neighbors(current_state, capacities):
+            if neighbor not in visited and is_valid_state(neighbor, capacities):
+                visited.add(neighbor)
+                queue.append((neighbor, path + [current_state]))
+    
+    return None
+
+def print_solution(solution):
+    if not solution:
+        print("No solution found.")
+    else:
+        for state in solution:
+            print(f"Jug1: {state[0]} liters, Jug2: {state[1]} liters")
+
+# Example usage:
+jug1_capacity = 4
+jug2_capacity = 3
+target_amount = 2
+
+solution = bfs((jug1_capacity, jug2_capacity), target_amount)
+print_solution(solution)
