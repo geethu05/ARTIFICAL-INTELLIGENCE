@@ -1,0 +1,102 @@
+class MapColoringCSP:
+    def __init__(self, variables, domains, neighbors, constraints):
+        self.variables = variables          # list of variable names
+        self.domains = domains              # dictionary mapping variable to set of possible values
+        self.neighbors = neighbors          # dictionary mapping variable to list of neighboring variables
+        self.constraints = constraints      # function that returns True if assignment satisfies constraints
+    
+    def backtrack_search(self):
+        assignment = {}
+        return self.backtrack(assignment)
+    
+    def backtrack(self, assignment):
+        if len(assignment) == len(self.variables):  # if assignment is complete, return it
+            return assignment
+        
+        var = self.select_unassigned_variable(assignment)
+        for value in self.order_domain_values(var, assignment):
+            if self.is_consistent(var, value, assignment):
+                assignment[var] = value
+                inferences = self.forward_check(var, value, assignment)
+                if inferences is not None:
+                    result = self.backtrack(assignment)
+                    if result is not None:
+                        return result
+                del assignment[var]
+                self.restore_domains(var, assignment, inferences)
+        return None
+    
+    def select_unassigned_variable(self, assignment):
+        """ Minimum Remaining Values (MRV) heuristic """
+        unassigned = [v for v in self.variables if v not in assignment]
+        return min(unassigned, key=lambda v: len(self.domains[v]))
+    
+    def order_domain_values(self, var, assignment):
+        """ Least Constraining Value (LCV) heuristic """
+        return list(self.domains[var])
+    
+    def is_consistent(self, var, value, assignment):
+        """ Check if assigning value to var is consistent with assignment """
+        for neighbor in self.neighbors[var]:
+            if neighbor in assignment and not self.constraints(var, value, neighbor, assignment[neighbor]):
+                return False
+        return True
+    
+    def forward_check(self, var, value, assignment):
+        inferences = {}
+        for neighbor in self.neighbors[var]:
+            if neighbor not in assignment:
+                if value in self.domains[neighbor]:
+                    self.domains[neighbor].remove(value)
+                    if not self.domains[neighbor]:
+                        return None
+                    inferences[neighbor] = value
+        return inferences
+    
+    def restore_domains(self, var, assignment, inferences):
+        for neighbor, value in inferences.items():
+            self.domains[neighbor].add(value)
+
+
+# Example usage:
+
+# Define variables (regions) and their domains (possible colors)
+variables = ['WA', 'NT', 'SA', 'Q', 'NSW', 'V', 'T']
+domains = {
+    'WA': {'red', 'green', 'blue'},
+    'NT': {'red', 'green', 'blue'},
+    'SA': {'red', 'green', 'blue'},
+    'Q': {'red', 'green', 'blue'},
+    'NSW': {'red', 'green', 'blue'},
+    'V': {'red', 'green', 'blue'},
+    'T': {'red', 'green', 'blue'}
+}
+
+# Define neighbors (adjacent regions)
+neighbors = {
+    'WA': ['NT', 'SA'],
+    'NT': ['WA', 'SA', 'Q'],
+    'SA': ['WA', 'NT', 'Q', 'NSW', 'V'],
+    'Q': ['NT', 'SA', 'NSW'],
+    'NSW': ['Q', 'SA', 'V'],
+    'V': ['SA', 'NSW', 'T'],
+    'T': ['V']
+}
+
+# Define constraints (no two adjacent regions can have the same color)
+def constraints_fn(A, a, B, b):
+    return a != b
+
+# Create the CSP instance
+map_csp = MapColoringCSP(variables, domains, neighbors, constraints_fn)
+
+# Solve the CSP
+solution = map_csp.backtrack_search()
+
+# Print the solution
+if solution is not None:
+    print("Solution found:")
+    for var in variables:
+        print(f"{var}: {solution[var]}")
+else:
+    print("No solution found.")
