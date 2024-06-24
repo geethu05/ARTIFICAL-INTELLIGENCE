@@ -1,0 +1,77 @@
+import heapq
+
+def calculate_distance(path, distances):
+    total_distance = 0
+    for i in range(len(path) - 1):
+        total_distance += distances[path[i]][path[i + 1]]
+    total_distance += distances[path[-1]][path[0]]  # return to the starting city
+    return total_distance
+
+def tsp_heuristic(current, remaining, distances):
+    # MST heuristic: calculate minimum spanning tree of the remaining nodes
+    if not remaining:
+        return 0
+    mst_cost = 0
+    nodes = list(remaining)
+    min_edges = [float('inf')] * len(nodes)
+    min_edges[0] = 0
+    visited = set()
+    while len(visited) < len(nodes):
+        min_cost = float('inf')
+        min_index = -1
+        for i in range(len(nodes)):
+            if i not in visited and min_edges[i] < min_cost:
+                min_cost = min_edges[i]
+                min_index = i
+        mst_cost += min_cost
+        visited.add(min_index)
+        for i in range(len(nodes)):
+            if i not in visited:
+                min_edges[i] = min(min_edges[i], distances[nodes[min_index]][nodes[i]])
+    return mst_cost
+
+def a_star_tsp(distances):
+    n = len(distances)
+    start = (0, frozenset([0]))
+    pq = [(0, 0, start)]
+    g_costs = {start: 0}
+    parents = {start: None}
+
+    while pq:
+        f, g, (current, visited) = heapq.heappop(pq)
+
+        if len(visited) == n:
+            path = [current]
+            while parents[(current, visited)] is not None:
+                current, visited = parents[(current, visited)]
+                path.append(current)
+            path.reverse()
+            return path, g
+
+        for neighbor in range(n):
+            if neighbor not in visited:
+                next_visited = visited | frozenset([neighbor])
+                new_g = g + distances[current][neighbor]
+                next_state = (neighbor, next_visited)
+
+                if next_state not in g_costs or new_g < g_costs[next_state]:
+                    g_costs[next_state] = new_g
+                    f = new_g + tsp_heuristic(neighbor, set(range(n)) - next_visited, distances)
+                    heapq.heappush(pq, (f, new_g, next_state))
+                    parents[next_state] = (current, visited)
+
+    return None, float('inf')
+
+# Example distances matrix (symmetric TSP)
+# The distance from city i to city j is distances[i][j]
+distances = [
+    [0, 10, 15, 20],
+    [10, 0, 35, 25],
+    [15, 35, 0, 30],
+    [20, 25, 30, 0]
+]
+
+shortest_path, min_distance = a_star_tsp(distances)
+
+print("Shortest path:", shortest_path)
+print("Minimum distance:", min_distance)
