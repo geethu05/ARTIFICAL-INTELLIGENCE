@@ -1,0 +1,9 @@
+% Base case: Sum of integers from 1 to 1 is 1
+sum_integers(1, 1).
+
+% Recursive rule: Sum of integers from 1 to n is S if sum of integers from 1 to n-1 is S1 and S is S1 + n
+sum_integers(N, S) :-
+    N > 1,
+    N1 is N - 1,
+    sum_integers(N1, S1),
+    S is S1 + N.
