@@ -1,0 +1,54 @@
+import itertools
+
+def travelling_salesman_held_karp(distances):
+    n = len(distances)
+    C = {}
+
+    # Initialize with direct distances
+    for k in range(1, n):
+        C[(1 << k, k)] = (distances[0][k], 0)
+
+    # Dynamic programming
+    for subset_size in range(2, n):
+        for subset in itertools.combinations(range(1, n), subset_size):
+            bits = 0
+            for bit in subset:
+                bits |= 1 << bit
+            for k in subset:
+                prev_bits = bits & ~(1 << k)
+                res = []
+                for m in subset:
+                    if m == k:
+                        continue
+                    res.append((C[(prev_bits, m)][0] + distances[m][k], m))
+                C[(bits, k)] = min(res)
+
+    # Reconstruct the path
+    bits = (2**n - 1) - 1
+    res = []
+    for k in range(1, n):
+        res.append((C[(bits, k)][0] + distances[k][0], k))
+    opt, parent = min(res)
+
+    # Path reconstruction
+    path = []
+    for i in range(n - 1):
+        path.append(parent)
+        bits, parent = bits & ~(1 << parent), C[(bits, parent)][1]
+    path.append(0)
+
+    return path[::-1], opt
+
+# Example distances matrix (symmetric TSP)
+# The distance from city i to city j is distances[i][j]
+distances = [
+    [0, 10, 15, 20],
+    [10, 0, 35, 25],
+    [15, 35, 0, 30],
+    [20, 25, 30, 0]
+]
+
+shortest_path, min_distance = travelling_salesman_held_karp(distances)
+
+print("Shortest path:", shortest_path)
+print("Minimum distance:", min_distance)
